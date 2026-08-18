@@ -1,0 +1,21 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+@theme {
+  /* Prime */
+  --color-prime: #7C3AED;
+  --color-prime-light: #DDD6FE;
+  --color-prime-dark: #6D28D9;
+  --color-prime-darkTheme: #A78BFA;
+
+  /* Surface */
+  --color-surface-light: #FFFFFF;
+  --color-surface-dark: #161B26;
+
+  /* Background */
+  --color-bgMain-light: #F9FAFB;
+  --color-bgMain-dark: #0B0F19;
+
+  /* Text */
+  --color-textMain-light: #1F2937;
+  --color-textMain-dark: #F9FAFB;
+}
