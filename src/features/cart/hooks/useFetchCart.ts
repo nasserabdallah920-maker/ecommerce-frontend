@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   deleteAllItems,
   deleteItem,
@@ -6,89 +6,87 @@ import {
   updateProduct,
 } from "../cart.services";
 import type { ICart } from "../cart.interfaces";
-import axios from "axios";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../Redux/store";
 
 export const useFetchCart = () => {
-  const [loading, setLoading] = useState<boolean>(false);
-
-  const [cart, setCart] = useState<ICart | undefined>();
+  const queryClient = useQueryClient();
   const userPayload = useSelector(
-    (state:RootState) => state.authuser.initialState,
+    (state: RootState) => state.authuser.initialState,
   );
-  const fetchCart = useCallback(async () => {
-    if (!userPayload.token) return;
-    try {
-      setLoading(true);
 
-      const response = await getCart();
-      setCart(response.data?.data.cart);
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
+  const {
+    data: cartResponse,
+    isLoading: isCartLoading,
+    refetch: fetchCart,
+  } = useQuery({
+    queryKey: ["cart"],
+    queryFn: getCart,
+    enabled: !!userPayload.token,
+    retry: false,
+  });
 
-        toast.error(
-          err.response?.data?.message || "Failed to load shopping cart",
-        );
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [userPayload]);
+  const cart: ICart | undefined = cartResponse?.data?.data?.cart;
 
-  const handleQuantityChange = async (productId: string, delta: number) => {
-    setLoading(true);
-    try {
-      const response = await updateProduct(productId, delta);
+  const updateQuantityMutation = useMutation({
+    mutationFn: ({ productId, delta }: { productId: string; delta: number }) =>
+      updateProduct(productId, delta),
+    onSuccess: (response) => {
       if (response.status === 200) {
-        fetchCart();
+        queryClient.invalidateQueries({ queryKey: ["cart"] });
         toast.success("done");
       }
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data.message || "something error");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "something error");
+    },
+  });
 
-  const handleRemoveItem = async (productId: string) => {
-    setLoading(true);
-    try {
-      await deleteItem(productId);
-      fetchCart();
+  const removeItemMutation = useMutation({
+    mutationFn: (productId: string) => deleteItem(productId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
       toast.success("the product is removed");
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data.message || "something error");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "something error");
+    },
+  });
 
-  const handleClearCart = async () => {
-    setLoading(true);
-    try {
-      const response = await deleteAllItems();
+  const clearCartMutation = useMutation({
+    mutationFn: () => deleteAllItems(),
+    onSuccess: (response) => {
       if (response.status === 204) {
-        fetchCart();
+        queryClient.invalidateQueries({ queryKey: ["cart"] });
         toast.success("the all product is removed");
       }
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data.message || "something error");
-      }
-    } finally {
-      setLoading(false);
-    }
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "something error");
+    },
+  });
+
+  const handleQuantityChange = (productId: string, delta: number) => {
+    updateQuantityMutation.mutate({ productId, delta });
   };
+
+  const handleRemoveItem = (productId: string) => {
+    removeItemMutation.mutate(productId);
+  };
+
+  const handleClearCart = () => {
+    clearCartMutation.mutate();
+  };
+
+  const loading =
+    isCartLoading ||
+    updateQuantityMutation.isPending ||
+    removeItemMutation.isPending ||
+    clearCartMutation.isPending;
 
   return {
     loading,
-
     cart,
     fetchCart,
     handleClearCart,

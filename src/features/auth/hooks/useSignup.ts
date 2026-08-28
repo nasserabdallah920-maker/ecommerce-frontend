@@ -1,9 +1,8 @@
-import { useReducer, useState } from "react";
+import { useReducer } from "react";
+import { useMutation } from "@tanstack/react-query";
 import type { ISignupData, SignupAction } from "../auth.interfaces";
 import { signup } from "../auth.services";
-
 import { toast } from "react-toastify";
-import axios from "axios";
 import { signupReducer } from "../../../utils/signupReducer";
 import { useNavigate } from "react-router-dom";
 import { validator } from "../../../utils/zodValidator";
@@ -13,7 +12,6 @@ import { useDispatch } from "react-redux";
 
 export const useSignup = () => {
   const nav = useNavigate();
-  const [error, setError] = useState("");
   const [state, dispatch] = useReducer(signupReducer, {
     firstName: "",
     lastName: "",
@@ -21,12 +19,12 @@ export const useSignup = () => {
     phoneNumber: "",
     password: "",
   });
-  const [loading, setLoading] = useState(false);
+
   const dispatchRedux = useDispatch();
-  const handleSignup = async (signupData: ISignupData) => {
-    try {
-      setLoading(true);
-      const res = await signup(signupData);
+
+  const signupMutation = useMutation({
+    mutationFn: (signupData: ISignupData) => signup(signupData),
+    onSuccess: (res) => {
       if (res.status === 201 && res.data.success === "success") {
         const data = res.data;
         dispatchRedux(
@@ -38,46 +36,32 @@ export const useSignup = () => {
         );
         toast.success("Account created successfully");
         nav("/");
-        return res;
       }
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data.message || "login failed");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Signup failed");
+    },
+  });
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const check = validator(signupSchema, state);
 
-    setLoading(true);
     if (!check.success) {
       check.error.issues.forEach((issue) => {
         toast.error(`${issue.message}`);
       });
-      setLoading(false);
       return;
     }
 
-    try {
-      await handleSignup(state);
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data.message);
-        setError(err.response?.data.message);
-      }
-    } finally {
-      setLoading(false);
-    }
+    signupMutation.mutate(state);
   };
 
   const handleChange = (type: SignupAction["type"], value: string) => {
-    setError("");
     dispatch({ type, value });
   };
 
-  return { handleChange, error, loading, handleSubmit };
+  const error = signupMutation.error ? (signupMutation.error as any).response?.data?.message : "";
+
+  return { handleChange, error, loading: signupMutation.isPending, handleSubmit };
 };

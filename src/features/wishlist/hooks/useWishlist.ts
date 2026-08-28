@@ -1,20 +1,27 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "react-toastify";
-import { useDispatch, useSelector } from "react-redux";
-import { addToWishlistThunk, getWishlist, removeFromWishlistThunk } from "../Redux/wishlistSlice";
-import type { RootState, AppDispatch } from "../../../Redux/store";
+import { useSelector } from "react-redux";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getWishlist, addToWishlist, removeFromWishlist } from "../wishlist.services";
+import type { RootState } from "../../../Redux/store";
+import axios from "axios";
 
 export const useWishlist = () => {
-  const dispatch = useDispatch<AppDispatch>();
-  const wishlistData = useSelector((state: RootState) => state.wishlist.list);
-  const status = useSelector((state: RootState) => state.wishlist.status);
+  const userPayload = useSelector((state: RootState) => state.authuser.initialState);
+  const isCompleted = useSelector((state: RootState) => state.authuser.isCompleted);
+  const queryClient = useQueryClient();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (status === "idle") {
-      dispatch(getWishlist());
-    }
-  }, [dispatch, status]);
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ["wishlist"],
+    queryFn: async () => {
+      const res = await getWishlist();
+      return res.data.data.wishlist || [];
+    },
+    enabled: !!userPayload?.token && isCompleted,
+  });
+
+  const wishlistData = data || [];
 
   const getWishlistIds = () => {
     if (!Array.isArray(wishlistData)) return [];
@@ -33,19 +40,52 @@ export const useWishlist = () => {
     return wishlistItems.includes(productId);
   };
 
+  const addToWishlistMutation = useMutation({
+    mutationFn: (productId: string) => {
+      if (!isCompleted) {
+        return Promise.reject(new Error("User profile is incomplete"));
+      }
+      return addToWishlist(productId);
+    },
+    onSuccess: () => {
+      toast.success("Added to wishlist");
+      queryClient.invalidateQueries({ queryKey: ["wishlist"] });
+    },
+    onError: (err: any) => {
+      const errorMessage = axios.isAxiosError(err) && err.response?.data?.message
+        ? err.response.data.message
+        : err.message || "Failed to add item to wishlist";
+      toast.error(errorMessage);
+    }
+  });
+
+  const removeFromWishlistMutation = useMutation({
+    mutationFn: (productId: string) => {
+      if (!isCompleted) {
+        return Promise.reject(new Error("User profile is incomplete"));
+      }
+      return removeFromWishlist(productId);
+    },
+    onSuccess: () => {
+      toast.success("Removed from wishlist");
+      queryClient.invalidateQueries({ queryKey: ["wishlist"] });
+    },
+    onError: (err: any) => {
+      const errorMessage = axios.isAxiosError(err) && err.response?.data?.message
+        ? err.response.data.message
+        : err.message || "Failed to remove item from wishlist";
+      toast.error(errorMessage);
+    }
+  });
+
   const toggleWishlist = async (productId: string) => {
     setActionLoading(productId);
     try {
       if (isInWishlist(productId)) {
-        await dispatch(removeFromWishlistThunk(productId)).unwrap();
-        toast.success("Removed from wishlist");
+        await removeFromWishlistMutation.mutateAsync(productId);
       } else {
-        await dispatch(addToWishlistThunk(productId)).unwrap();
-        toast.success("Added to wishlist");
+        await addToWishlistMutation.mutateAsync(productId);
       }
-    } catch (error) {
-      console.error("Failed to toggle wishlist", error);
-      toast.error("An error occurred");
     } finally {
       setActionLoading(null);
     }
@@ -54,19 +94,16 @@ export const useWishlist = () => {
   const handleRemove = async (productId: string) => {
     setActionLoading(productId);
     try {
-      await dispatch(removeFromWishlistThunk(productId)).unwrap();
-      toast.success("Removed from wishlist");
-    } catch (error) {
-      console.error("Failed to remove from wishlist", error);
-      toast.error("Failed to remove item");
+      await removeFromWishlistMutation.mutateAsync(productId);
     } finally {
       setActionLoading(null);
     }
   };
 
   return {
+    wishlistData,
     wishlistItems,
-    loading: status === "loading",
+    loading,
     actionLoading,
     isInWishlist,
     toggleWishlist,

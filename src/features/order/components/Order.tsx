@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import Loading from "../../../components/shared/loading";
 import { useOrder } from "../hooks/useOrder";
@@ -11,21 +10,18 @@ export default function OrderComponent() {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const paymobId = searchParams.get("order");
+
+  const queryOrderId = id && id !== "paid" ? id : undefined;
+  const queryPaymobId = paymobId && id === "paid" ? paymobId : undefined;
+
   const {
-    getOrder,
     order,
     handleCashClick,
     handlePaymobClick,
     isCashLoading,
-    isPaymobLoading,loading
-  } = useOrder();
-  useEffect(() => {
-    if (id && id !== "paid") {
-      getOrder(id);
-    } else if (paymobId && id == "paid") {
-      getOrder(undefined, paymobId);
-    }
-  }, [getOrder, id, paymobId]);
+    isPaymobLoading,
+    loading
+  } = useOrder(queryOrderId, queryPaymobId);
 
   if(loading)return <Loading/>
   return (

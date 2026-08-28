@@ -1,40 +1,39 @@
-import { useCallback, useState } from "react";
-import type { ICategory } from "../features/category/category.interfaces";
-import type { IProduct } from "../features/products/products.interfaces";
+import { useQuery } from "@tanstack/react-query";
 import { getCategoryById } from "../features/category/category.services";
 import { getProductByCategoryId } from "../features/products/products.services";
-import axios from "axios";
 
-export const useCategoryDetails = () => {
-  const [category, setCategory] = useState<ICategory | null>(null);
-  const [productsByCategory, setProducts] = useState<IProduct[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const fetchCategory =useCallback( async (id:string) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await getCategoryById(id);
-      const productResponse = await getProductByCategoryId(id);
-      setCategory(response.data.data);
-      setProducts(productResponse?.data.data || []);
+export const useCategoryDetails = (id?: string) => {
+  const {
+    data: categoryResponse,
+    isLoading: categoryLoading,
+    error: categoryErrorObj,
+  } = useQuery({
+    queryKey: ["category", id],
+    queryFn: () => getCategoryById(id!),
+    enabled: !!id,
+  });
 
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        setError(
-          err.response?.data?.message || "Failed to fetch category details",
-        );
-      }
-    } finally {
-      setLoading(false);
-    }
-  },[])
+  const {
+    data: productsResponse,
+    isLoading: productsLoading,
+    error: productsErrorObj,
+  } = useQuery({
+    queryKey: ["categoryProducts", id],
+    queryFn: () => getProductByCategoryId(id!),
+    enabled: !!id,
+  });
+
+  const category = categoryResponse?.data?.data || null;
+  const productsByCategory = productsResponse?.data?.data || [];
+
+  const loading = categoryLoading || productsLoading;
+  const errorObj = categoryErrorObj || productsErrorObj;
+  const error = errorObj ? errorObj.message : null;
 
   return {
     category,
     productsByCategory,
     loading,
     error,
-    fetchCategory,
   };
 };

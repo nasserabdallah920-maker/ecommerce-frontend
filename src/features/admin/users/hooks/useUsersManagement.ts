@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   blockUserById,
   deleteUserById,
@@ -8,96 +8,74 @@ import {
   searchUser,
 } from "../../services/users.services";
 import type { User } from "../users.interfaces";
-import axios from "axios";
 import { toast } from "react-toastify";
 
 export function useUsersManagement() {
-  const [users, setUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
-  const [loading, setLoading] = useState<boolean>(false);
+  const queryClient = useQueryClient();
 
-  const getAllUsers = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await findAllUser();
-      setUsers(res.data.data || res.data.users || res.data);
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data?.message || "Error fetching users");
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const {
+    data: usersData,
+    isLoading: isUsersLoading,
+    refetch: getAllUsers,
+  } = useQuery({
+    queryKey: ["adminUsers", searchQuery],
+    queryFn: () => (searchQuery.trim() ? searchUser(searchQuery) : findAllUser()),
+  });
 
-  const searchUsers = useCallback(async () => {
-    if (!searchQuery.trim()) {
-      getAllUsers();
-      return;
-    }
+  const users: User[] = usersData?.data?.data || usersData?.data?.users || usersData?.data || [];
 
-    setLoading(true);
-    try {
-      const res = await searchUser(searchQuery);
-      setUsers(res.data.data);
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data?.message || "Error searching users");
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [getAllUsers, searchQuery]);
+  const {
+    data: userDetailsData,
+    isLoading: isUserDetailsLoading,
+  } = useQuery({
+    queryKey: ["adminUserDetails", selectedUserId],
+    queryFn: () => getUserById(selectedUserId!),
+    enabled: !!selectedUserId,
+  });
 
-  const getUserDetails = useCallback(async (id: string) => {
-    setLoading(true);
-    try {
-      const res = await getUserById(id);
-      setSelectedUser(res.data.data);
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        toast.error(
-          err.response?.data?.message || "Error fetching user details",
-        );
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const selectedUser: User | null = userDetailsData?.data?.data || null;
 
-  const deleteUser = async (id: string) => {
-    setLoading(true);
-    try {
-      await deleteUserById(id);
+  const getUserDetails = (id: string) => {
+    setSelectedUserId(id);
+  };
+
+  const deleteUserMutation = useMutation({
+    mutationFn: (id: string) => deleteUserById(id),
+    onSuccess: () => {
       toast.success("User deleted successfully");
-      await getAllUsers();
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data?.message || "Error deleting user");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+      queryClient.invalidateQueries({ queryKey: ["adminUsers"] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Error deleting user");
+    },
+  });
 
-  const blockUser = async (id: string) => {
-    setLoading(true);
-    try {
-      await blockUserById(id);
+  const blockUserMutation = useMutation({
+    mutationFn: (id: string) => blockUserById(id),
+    onSuccess: (_, id) => {
       toast.success("User status updated successfully");
-      await getUserDetails(id);
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        toast.error(
-          err.response?.data?.message || "Error updating user status",
-        );
+      queryClient.invalidateQueries({ queryKey: ["adminUsers"] });
+      if (selectedUserId === id) {
+        queryClient.invalidateQueries({ queryKey: ["adminUserDetails", id] });
       }
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Error updating user status");
+    },
+  });
+
+  const deleteUser = (id: string) => deleteUserMutation.mutate(id);
+  const blockUser = (id: string) => blockUserMutation.mutate(id);
+  const searchUsers = () => { /* React Query automatically fetches on searchQuery change */ };
+
+  const loading =
+    isUsersLoading ||
+    isUserDetailsLoading ||
+    deleteUserMutation.isPending ||
+    blockUserMutation.isPending;
 
   return {
     users,
@@ -109,7 +87,6 @@ export function useUsersManagement() {
     deleteUser,
     getAllUsers,
     blockUser,
-    open,
     loading,
   };
 }

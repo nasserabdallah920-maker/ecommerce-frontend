@@ -1,76 +1,72 @@
-import { useCallback, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { confirmCashOrder, findOrder, PaymobLink, paymobPaidOrder } from "../orders.services";
 import type { IOrder } from "../interfaces";
-import axios from "axios";
 import { toast } from "react-toastify";
 
-export const useOrder = () => {
-  const [isPaymobLoading, setIsPaymobLoading] = useState(false);
-  const [isCashLoading, setIsCashLoading] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [order, setOrder] = useState<IOrder | null>(null);
+export const useOrder = (orderId?: string, paymobId?: string) => {
+  const queryClient = useQueryClient();
 
-  const getOrder = useCallback(async (orderId?: string, paymobId?: string) => {
-    setLoading(true);
-    try {
+  const {
+    data: orderResponse,
+    isLoading: isOrderLoading,
+    refetch: getOrder,
+  } = useQuery({
+    queryKey: ["order", orderId, paymobId],
+    queryFn: async () => {
       if (paymobId) {
-        const res = await paymobPaidOrder(paymobId);
-        setOrder(res.data.data.order[0]);
+        return paymobPaidOrder(paymobId);
       } else if (orderId) {
-        const res = await findOrder(orderId);
-        setOrder(res.data.data.order);
+        return findOrder(orderId);
       }
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data?.message || "Error fetching order");
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return null;
+    },
+    enabled: !!orderId || !!paymobId,
+  });
 
-  const handlePaymobClick = async (orderId: string) => {
-    setIsPaymobLoading(true);
-    setLoading(true);
-    try {
-      const res = await PaymobLink(orderId);
+  const order: IOrder | null = paymobId 
+    ? orderResponse?.data?.data?.order?.[0] || null 
+    : orderResponse?.data?.data?.order || null;
+
+  const paymobMutation = useMutation({
+    mutationFn: (id: string) => PaymobLink(id),
+    onSuccess: (res) => {
       if (res.status === 200) {
         window.location.href = res.data.data.url;
       }
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data?.message || "Error processing payment");
-      }
-    } finally {
-      setIsPaymobLoading(false);
-      setLoading(false);
-    }
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Error processing payment");
+    },
+  });
+
+  const cashMutation = useMutation({
+    mutationFn: (id: string) => confirmCashOrder(id),
+    onSuccess: (res) => {
+      queryClient.setQueryData(["order", orderId, paymobId], res);
+      toast.success("Cash order confirmed successfully");
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Error confirming order");
+    },
+  });
+
+  const handlePaymobClick = (id: string) => {
+    paymobMutation.mutate(id);
   };
 
-  const handleCashClick = async (orderId: string) => {
-    setIsCashLoading(true);
-    setLoading(true);
-    try {
-      const res = await confirmCashOrder(orderId);
-      setOrder(res.data.data.order);
-      toast.success("Cash order confirmed successfully");
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data?.message || "Error confirming order");
-      }
-    } finally {
-      setIsCashLoading(false);
-      setLoading(false);
-    }
+  const handleCashClick = (id: string) => {
+    cashMutation.mutate(id);
   };
+
+  const loading = isOrderLoading || paymobMutation.isPending || cashMutation.isPending;
 
   return {
     getOrder,
     order,
     handleCashClick,
     handlePaymobClick,
-    isCashLoading,
-    isPaymobLoading,
+    isCashLoading: cashMutation.isPending,
+    isPaymobLoading: paymobMutation.isPending,
     loading,
   };
 };

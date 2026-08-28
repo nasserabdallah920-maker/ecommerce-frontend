@@ -1,4 +1,5 @@
-import { useCallback, useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getProductById } from "../../../products/products.services";
 import {
   addProductImage,
@@ -7,52 +8,87 @@ import {
 } from "../../services/products.services";
 import type { IProduct } from "../../../products/products.interfaces";
 import { toast } from "react-toastify";
-import axios from "axios";
 
 export const useEditProduct = () => {
-  const [product, setProduct] = useState<IProduct>();
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState<string>("");
   const [stock, setStock] = useState<string>("");
   const [description, setDescription] = useState("");
   const [newImages, setNewImages] = useState<File[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+  
+  const queryClient = useQueryClient();
 
-  const getProduct = useCallback(async (id: string) => {
-    setLoading(true);
-    try {
-      const res = await getProductById(id);
-      const productData = res?.data.data;
-      setProduct(productData);
-      setTitle(productData.title);
-      setPrice(productData.price);
-      setStock(productData.stock);
-      setDescription(productData.description);
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data?.message || "Error fetching product");
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const {
+    data: productData,
+    isLoading: isProductLoading,
+    isSuccess,
+  } = useQuery({
+    queryKey: ["adminProductDetails", selectedProductId],
+    queryFn: () => getProductById(selectedProductId!),
+    enabled: !!selectedProductId,
+  });
 
-  const removeImage = async (productId: string, imageName: string) => {
-    setLoading(true);
-    try {
-      await deleteProductImage(productId, imageName);
-      toast.success("Image removed successfully");
-      await getProduct(productId);
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data?.message || "Error deleting image");
-      }
-    } finally {
-      setLoading(false);
+  const product: IProduct | undefined = productData?.data?.data;
+
+  useEffect(() => {
+    if (isSuccess && product) {
+      setTitle(product.title);
+      setPrice(String(product.price));
+      setStock(String(product.stock));
+      setDescription(product.description);
     }
+  }, [isSuccess, product]);
+
+  const getProduct = (id: string) => {
+    setSelectedProductId(id);
   };
 
-  const addImage = async (productId: string) => {
+  const removeImageMutation = useMutation({
+    mutationFn: ({ productId, imageName }: { productId: string; imageName: string }) =>
+      deleteProductImage(productId, imageName),
+    onSuccess: (_, variables) => {
+      toast.success("Image removed successfully");
+      queryClient.invalidateQueries({ queryKey: ["adminProductDetails", variables.productId] });
+      queryClient.invalidateQueries({ queryKey: ["adminProducts"] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Error deleting image");
+    },
+  });
+
+  const addImageMutation = useMutation({
+    mutationFn: ({ productId, formData }: { productId: string; formData: FormData }) =>
+      addProductImage(productId, formData),
+    onSuccess: (_, variables) => {
+      toast.success("Image added successfully");
+      setNewImages([]);
+      queryClient.invalidateQueries({ queryKey: ["adminProductDetails", variables.productId] });
+      queryClient.invalidateQueries({ queryKey: ["adminProducts"] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Error uploading image");
+    },
+  });
+
+  const updateProductMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => updateProductInfromation(id, data),
+    onSuccess: (_, variables) => {
+      toast.success("Product updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["adminProductDetails", variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["adminProducts"] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Error updating product");
+    },
+  });
+
+  const removeImage = (productId: string, imageName: string) => {
+    removeImageMutation.mutate({ productId, imageName });
+  };
+
+  const addImage = (productId: string) => {
     if (!newImages.length) {
       toast.error("Please select at least one image");
       return;
@@ -61,42 +97,24 @@ export const useEditProduct = () => {
     const formData = new FormData();
     newImages.forEach((image) => formData.append("images", image));
 
-    setLoading(true);
-    try {
-      await addProductImage(productId, formData);
-      toast.success("Image added successfully");
-      setNewImages([]);
-      await getProduct(productId);
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data?.message || "Error uploading image");
-      }
-    } finally {
-      setLoading(false);
-    }
+    addImageMutation.mutate({ productId, formData });
   };
 
-  const updateProduct = async (id: string) => {
+  const updateProduct = (id: string) => {
     const updatedProductData = {
       title,
       description,
       stock: String(stock),
       price: String(price),
     };
-
-    setLoading(true);
-    try {
-      await updateProductInfromation(id, updatedProductData);
-      toast.success("Product updated successfully");
-      await getProduct(id);
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data?.message || "Error updating product");
-      }
-    } finally {
-      setLoading(false);
-    }
+    updateProductMutation.mutate({ id, data: updatedProductData });
   };
+
+  const loading =
+    isProductLoading ||
+    removeImageMutation.isPending ||
+    addImageMutation.isPending ||
+    updateProductMutation.isPending;
 
   return {
     getProduct,

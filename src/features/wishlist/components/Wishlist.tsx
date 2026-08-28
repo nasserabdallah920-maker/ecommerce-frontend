@@ -1,30 +1,20 @@
-import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Heart, Trash2, HeartOff } from "lucide-react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import FeedbackMessage from "../../../components/shared/FeedbackMessage";
 import EmptyState from "../../../components/shared/EmptyState";
-import { getWishlist } from "../Redux/wishlistSlice";
-import type { AppDispatch, RootState } from "../../../Redux/store";
+import type { RootState } from "../../../Redux/store";
 import { useWishlist } from "../hooks/useWishlist";
 import type { IProduct } from "../../products/products.interfaces";
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL;
 
 export default function Wishlist() {
-  const { handleRemove } = useWishlist();
-  const wishlistItems = useSelector(
-    (state: RootState) => state.wishlist.list || []
-  );
+  const { handleRemove, wishlistData } = useWishlist();
+  
   const userPayload = useSelector(
     (state: RootState) => state.authuser.initialState
   );
-
-  const dispatch = useDispatch<AppDispatch>();
-
-  useEffect(() => {
-    if (userPayload?.token) dispatch(getWishlist());
-  }, [dispatch, userPayload?.token]);
 
   if (!userPayload?.token) {
     return (
@@ -54,7 +44,7 @@ export default function Wishlist() {
     );
   }
 
-  if (!Array.isArray(wishlistItems) || wishlistItems.length === 0) {
+  if (!Array.isArray(wishlistData) || wishlistData.length === 0) {
     return (
       <div className="p-6 max-w-6xl mx-auto w-full">
         <div className="flex items-center gap-3 mb-8">
@@ -98,7 +88,7 @@ export default function Wishlist() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {wishlistItems.map((item: unknown) => {
+        {wishlistData.map((item: unknown) => {
           const wishItem = item as { product?: IProduct, _id?: string } & IProduct;
           const product: IProduct = wishItem.product || wishItem;
           const productId = product?._id || wishItem._id;

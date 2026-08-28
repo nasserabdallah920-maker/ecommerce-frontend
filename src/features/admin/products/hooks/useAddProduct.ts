@@ -1,7 +1,7 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createProduct } from "../../services/products.services";
 import { toast } from "react-toastify";
-import axios from "axios";
 import { getAllCategories } from "../../../category/category.services";
 import type { ICategory } from "../../../category/category.interfaces";
 import { createProductValidation } from "../products.validations";
@@ -13,23 +13,20 @@ export const useAddProduct = () => {
   const [stock, setStock] = useState<string>("");
   const [price, setPrice] = useState<string>("");
   const [category, setCategory] = useState<string>("");
-  const [categories, setCategories] = useState<ICategory[]>([]);
   const [images, setImages] = useState<File[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
 
-  const getCategories = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await getAllCategories();
-      setCategories(res.data.data);
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data?.message || "Error loading categories");
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const queryClient = useQueryClient();
+
+  const {
+    data: categoriesData,
+    isLoading: isCategoriesLoading,
+    refetch: getCategories,
+  } = useQuery({
+    queryKey: ["adminCategories"],
+    queryFn: getAllCategories,
+  });
+
+  const categories: ICategory[] = categoriesData?.data?.data || [];
 
   const reset = () => {
     setDescription("");
@@ -40,7 +37,25 @@ export const useAddProduct = () => {
     setImages([]);
   };
 
-  const addProduct = async () => {
+  const addProductMutation = useMutation({
+    mutationFn: (formData: FormData) => createProduct(formData),
+    onSuccess: (res) => {
+      if (res.status === 201) {
+        reset();
+        toast.success("The product was created successfully");
+        queryClient.invalidateQueries({ queryKey: ["adminProducts"] });
+      }
+    },
+    onError: (err: any) => {
+      if (err.response?.status === 422) {
+        toast.error("Category not found");
+      } else {
+        toast.error(err.response?.data?.message || "Something went wrong");
+      }
+    },
+  });
+
+  const addProduct = () => {
     const check = validator(createProductValidation, {
       title,
       description,
@@ -67,25 +82,10 @@ export const useAddProduct = () => {
       formData.append("images", image);
     });
 
-    setLoading(true);
-    try {
-      const res = await createProduct(formData);
-      if (res.status === 201) {
-        reset();
-        toast.success("The product was created successfully");
-      }
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        if (err.response?.status === 422) {
-          toast.error("Category not found");
-        } else {
-          toast.error(err.response?.data?.message || "Something went wrong");
-        }
-      }
-    } finally {
-      setLoading(false);
-    }
+    addProductMutation.mutate(formData);
   };
+
+  const loading = isCategoriesLoading || addProductMutation.isPending;
 
   return {
     setDescription,

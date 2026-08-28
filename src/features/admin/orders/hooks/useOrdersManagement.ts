@@ -1,4 +1,5 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { IOrder } from "../../../order/interfaces";
 import {
   getAllOrdersAPI,
@@ -6,73 +7,67 @@ import {
   changeOrderStatusAPI,
   getOrdersForUser,
 } from "../../services/orders.services";
-import axios from "axios";
 import { toast } from "react-toastify";
 
 export function useOrdersManagement() {
-  const [orders, setOrders] = useState<IOrder[]>([]);
-  const [selectedOrder, setSelectedOrder] = useState<IOrder | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [userIdFilter, setUserIdFilter] = useState<string | null>(null);
 
-  const getAllOrders = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await getAllOrdersAPI();
-      setOrders(res.data.data);
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data?.message || "Something went wrong");
-        setOrders([]);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const queryClient = useQueryClient();
 
-  const getAllOrdersForOne = useCallback(async (id: string) => {
-    setLoading(true);
-    try {
-      const res = await getOrdersForUser(id);
-      setOrders(res.data.data);
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data?.message || "Something went wrong");
-        setOrders([]);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const {
+    data: ordersData,
+    isLoading: isOrdersLoading,
+  } = useQuery({
+    queryKey: ["adminOrders", userIdFilter],
+    queryFn: () => (userIdFilter ? getOrdersForUser(userIdFilter) : getAllOrdersAPI()),
+  });
 
-  const getOneOrder = useCallback(async (orderId: string) => {
-    setLoading(true);
-    try {
-      const res = await getOneOrderAPI(orderId);
-      setSelectedOrder(res.data.data);
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data?.message || "Something went wrong");
-        setSelectedOrder(null);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const orders: IOrder[] = ordersData?.data?.data || [];
 
-  const changeOrderStatus = async (orderId: string, status: string) => {
-    setLoading(true);
-    try {
-      await changeOrderStatusAPI(orderId, status);
+  const {
+    data: orderDetailsData,
+    isLoading: isOrderDetailsLoading,
+  } = useQuery({
+    queryKey: ["adminOrderDetails", selectedOrderId],
+    queryFn: () => getOneOrderAPI(selectedOrderId!),
+    enabled: !!selectedOrderId,
+  });
+
+  const selectedOrder: IOrder | null = orderDetailsData?.data?.data || null;
+
+  const changeStatusMutation = useMutation({
+    mutationFn: ({ orderId, status }: { orderId: string; status: string }) =>
+      changeOrderStatusAPI(orderId, status),
+    onSuccess: () => {
       toast.success("Order status updated successfully");
-      await getAllOrders();
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        toast.error(err.response?.data?.message || "Something went wrong");
+      queryClient.invalidateQueries({ queryKey: ["adminOrders"] });
+      if (selectedOrderId) {
+        queryClient.invalidateQueries({ queryKey: ["adminOrderDetails", selectedOrderId] });
       }
-    } finally {
-      setLoading(false);
-    }
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "Something went wrong");
+    },
+  });
+
+  const getAllOrders = () => {
+    setUserIdFilter(null);
   };
+
+  const getAllOrdersForOne = (id: string) => {
+    setUserIdFilter(id);
+  };
+
+  const getOneOrder = (orderId: string) => {
+    setSelectedOrderId(orderId);
+  };
+
+  const changeOrderStatus = (orderId: string, status: string) => {
+    changeStatusMutation.mutate({ orderId, status });
+  };
+
+  const loading = isOrdersLoading || isOrderDetailsLoading || changeStatusMutation.isPending;
 
   return {
     orders,
@@ -81,7 +76,7 @@ export function useOrdersManagement() {
     getAllOrders,
     getOneOrder,
     changeOrderStatus,
-    setSelectedOrder,
+    setSelectedOrder: (order: IOrder | null) => setSelectedOrderId(order?._id || null),
     getAllOrdersForOne,
   };
 }

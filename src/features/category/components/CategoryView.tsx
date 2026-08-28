@@ -4,17 +4,13 @@ import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
 import Products from "../../../components/shared/Products";
 import { useCategoryDetails } from "../../../hooks/useCategoryDetails";
 import CategoryInfo from "./CategoryInfo";
-import { useEffect } from "react";
 
 export default function CategoryView() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const { category, productsByCategory, loading, error, fetchCategory } =
-    useCategoryDetails();
-  useEffect(() => {
-    if (id) fetchCategory(id);
-  }, [fetchCategory,id]);
+  const { category, productsByCategory, loading, error } =
+    useCategoryDetails(id);
 
   return (
     <div className="min-h-screen bg-bgMain-light dark:bg-bgMain-dark transition-colors duration-300 py-8 sm:py-12">

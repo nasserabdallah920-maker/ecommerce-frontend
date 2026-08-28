@@ -1,6 +1,6 @@
-import axios from "axios";
-import { changePassword } from "../services";
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { changePassword } from "../services";
 import { validator } from "../../../../utils/zodValidator";
 import { changePasswordValidate } from "../../auth.validations";
 import { toast } from "react-toastify";
@@ -26,24 +26,30 @@ export const useChangePassword = () => {
     if (status) setStatus(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    try {
-      const check = validator(changePasswordValidate, formData);
-      if (!check.success) {
-        check.error.issues.forEach((issue) => {
-          toast.error(`${issue.message}`);
-        });
-        return;
-      }
-      await changePassword(formData);
+  const changePasswordMutation = useMutation({
+    mutationFn: (data: IChangePasswordRequest) => changePassword(data),
+    onSuccess: () => {
       setStatus({ type: "success", message: "Password updated successfully!" });
       setFormData({ oldPassword: "", newPassword: "", confirmPassword: "" });
-    } catch (err) {
-      if (axios.isAxiosError(err)){
-        toast.error(err.response?.data.message || "something error");}
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || "something error");
+      setStatus({ type: "error", message: err.response?.data?.message || "Failed to update password" });
     }
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const check = validator(changePasswordValidate, formData);
+    if (!check.success) {
+      check.error.issues.forEach((issue) => {
+        toast.error(`${issue.message}`);
+      });
+      return;
+    }
+    
+    changePasswordMutation.mutate(formData);
   };
 
   return {
@@ -59,5 +65,6 @@ export const useChangePassword = () => {
     setShowOld,
     status,
     setStatus,
+    loading: changePasswordMutation.isPending
   };
 };

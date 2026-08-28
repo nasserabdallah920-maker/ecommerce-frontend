@@ -2,10 +2,7 @@ import ValueFeatures from "./HomeFeatures";
 import Products from "../components/shared/Products";
 import Categories from "../components/shared/Categories";
 import { useHomeData } from "../hooks/useHomeData";
-import { useDispatch } from "react-redux";
 import { useEffect } from "react";
-import { getWishlist } from "../features/wishlist/Redux/wishlistSlice";
-import type { AppDispatch } from "../Redux/store";
 
 export default function UserHome() {
   const {
@@ -16,11 +13,7 @@ export default function UserHome() {
     productsLoading,
     categoriesLoading,
   } = useHomeData();
-  const dispatch = useDispatch<AppDispatch>();
 
-  useEffect(() => {
-    dispatch(getWishlist());
-  }, [dispatch]);
   useEffect(() => {
     fetchCategories();
     fetchProducts();
