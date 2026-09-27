@@ -7,9 +7,8 @@ import Loading from "../../../../components/shared/loading";
 export default function ProductDetails({ product }: { product: IProduct }) {
   const { id } = useParams<{ id: string }>();
   const { selectedImageIndex, setSelectedImageIndex,loading } = useProductDetails(id);
-  const baseUrl = import.meta.env.VITE_API_BASE_URL;
   const getFullImageUrl = (imgPath?: string) => {
-    return baseUrl + imgPath;
+    return imgPath;
   };
 
   const images = Array.isArray(product.images)

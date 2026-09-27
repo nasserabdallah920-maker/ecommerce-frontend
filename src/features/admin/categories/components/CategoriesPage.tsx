@@ -12,7 +12,6 @@ import EmptyState from "../../../../components/shared/EmptyState";
 import { useCategoriesManagement } from "../hooks/useCategoriesManagement";
 import { Link } from "react-router-dom";
 import Loading from "../../../../components/shared/loading";
-const baseUrl = import.meta.env.VITE_API_BASE_URL;
 
 export default function CategoriesPage() {
   const { categories, loading, getAllCategories, deleteCategory } =
@@ -99,7 +98,7 @@ export default function CategoriesPage() {
                 <div className="relative w-full h-40 rounded-2xl overflow-hidden bg-bgMain-light dark:bg-bgMain-dark border border-gray-100 dark:border-gray-800/80 mb-4">
                   {category.image ? (
                     <img
-                      src={baseUrl + category.image}
+                      src={category.image}
                       alt={category.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />

@@ -7,8 +7,6 @@ import type { RootState } from "../../../Redux/store";
 import { useWishlist } from "../hooks/useWishlist";
 import type { IProduct } from "../../products/products.interfaces";
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL;
-
 export default function Wishlist() {
   const { handleRemove, wishlistData } = useWishlist();
   
@@ -93,7 +91,7 @@ export default function Wishlist() {
           const product: IProduct = wishItem.product || wishItem;
           const productId = product?._id || wishItem._id;
           const imageUrl = product?.images?.[0]
-            ? `${baseUrl}${product.images[0]}`
+            ? product.images[0]
             : "/placeholder.png";
 
           return (

@@ -16,8 +16,6 @@ import { calculateSubtotal } from "../../../utils/cart";
 import type { ICartItem, ICart } from "../cart.interfaces";
 import Loading from "../../../components/shared/loading";
 
-
-const baseUrl = import.meta.env.VITE_API_BASE_URL;
 interface IProps {
   cart?: ICart;
   error?: string;
@@ -107,7 +105,7 @@ export default function ProductCart({
             {cart.items.map((item: ICartItem) => {
               const prod = item.product;
 
-              const imageUrl = baseUrl + prod?.images[0];
+              const imageUrl = prod?.images[0];
 
               return (
                 <div

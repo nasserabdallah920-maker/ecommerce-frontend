@@ -11,8 +11,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useCategoriesManagement } from "../hooks/useCategoriesManagement";
 import Loading from "../../../../components/shared/loading";
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL;
-
 export default function CategoryFormPage() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -113,7 +111,7 @@ export default function CategoryFormPage() {
               <div className="w-20 h-20 rounded-lg overflow-hidden bg-bgMain-light dark:bg-bgMain-dark border border-gray-100 dark:border-gray-800 flex items-center justify-center shrink-0">
                 {
                   <img
-                    src={baseUrl + category?.image}
+                    src={category?.image}
                     alt={category?.name}
                     className="w-full h-full object-cover"
                   />

@@ -11,7 +11,6 @@ import { useSelector } from "react-redux";
 import type { RootState } from "../../Redux/store";
 import axios from "axios";
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL;
 export default function Products({
   loading,
   productsShow,
@@ -98,7 +97,7 @@ export default function Products({
               >
                 <div className="w-full h-52 bg-bgMain-light dark:bg-bgMain-dark relative overflow-hidden">
                   <img
-                    src={baseUrl + product.images[0]}
+                    src={product.images[0]}
                     alt={product.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />

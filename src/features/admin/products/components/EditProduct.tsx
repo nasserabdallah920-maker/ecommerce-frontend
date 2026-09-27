@@ -17,8 +17,6 @@ import { useParams } from "react-router-dom";
 import { useEffect } from "react";
 import Loading from "../../../../components/shared/loading";
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL;
-
 export default function EditProductPage() {
   const { id } = useParams();
   const {
@@ -177,7 +175,7 @@ export default function EditProductPage() {
                   className="relative group rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 aspect-square bg-bgMain-light dark:bg-bgMain-dark"
                 >
                   <img
-                    src={baseUrl + img}
+                    src={img}
                     alt={`product-img-${index}`}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                   />

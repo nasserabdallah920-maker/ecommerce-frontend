@@ -2,7 +2,6 @@ import { ArrowRight, LayoutGrid, FolderX } from "lucide-react";
 import { Link } from "react-router-dom";
 import EmptyState from "./EmptyState";
 import type { ICategory } from "../../features/category/category.interfaces";
-const baseUrl = import.meta.env.VITE_API_BASE_URL;
 export default function Categories({
   categories,
   loading,
@@ -59,7 +58,7 @@ export default function Categories({
               >
                 <div className="w-full h-44 bg-bgMain-light dark:bg-bgMain-dark relative overflow-hidden">
                   <img
-                    src={baseUrl + category.image}
+                    src={category.image}
                     alt={category.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />

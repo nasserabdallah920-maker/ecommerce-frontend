@@ -8,7 +8,15 @@ import { BrowserRouter } from "react-router-dom";
 import { store } from "./Redux/store.ts";
 import { Provider } from "react-redux";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // البيانات صالحة لمدة 5 دقائق
+      retry: 1,                  // إعادة المحاولة مرة واحدة فقط عند الفشل
+      refetchOnWindowFocus: false, // لا إعادة جلب عند التبديل بين النوافذ
+    },
+  },
+});
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

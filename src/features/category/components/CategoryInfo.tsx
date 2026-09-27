@@ -1,8 +1,6 @@
 import { Folder, FileText } from "lucide-react";
 import type { ICategory } from "../category.interfaces";
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL;
-
 interface CategoryInfoProps {
   category: ICategory;
 }
@@ -34,7 +32,7 @@ export default function CategoryInfo({ category }: CategoryInfoProps) {
           </span>
           <div className="relative w-full h-64 rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-bgMain-light dark:bg-bgMain-dark">
             <img
-              src={baseUrl + category.image}
+              src={category.image}
               alt={category.name}
               className="w-full h-full object-cover"
             />
