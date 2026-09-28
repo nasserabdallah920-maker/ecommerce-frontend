@@ -35,7 +35,7 @@ export default function UsersPage() {
 
   if(loading) return<Loading/>
   return (
-    <div className="min-h-screen bg-bgMain-light dark:bg-bgMain-dark p-4 sm:p-8 md:p-12 transition-colors">
+    <div className="p-4 sm:p-8 md:p-12 transition-colors">
       <div className="max-w-6xl mx-auto space-y-6">
      
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-gray-200 dark:border-gray-800">
