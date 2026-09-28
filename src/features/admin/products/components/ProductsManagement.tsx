@@ -8,14 +8,14 @@ import {
 
   Send,
 } from "lucide-react";
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useProductManagement } from "../hooks/useProductManagement";
 import ProductsList from "./ProductsList";
 import Loading from "../../../../components/shared/loading";
 
 export default function ProductsManagement() {
-  const { getProducts, products, getCategories, categories, searchProducts ,loading} =
+  const { getProducts, products, categories, searchProducts ,loading} =
     useProductManagement();
 
   const itemsStocked = products?.filter((e) => e.stock == 0);

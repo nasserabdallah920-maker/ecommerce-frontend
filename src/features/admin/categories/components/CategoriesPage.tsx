@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   Plus,
   Trash2,
@@ -14,7 +14,7 @@ import { Link } from "react-router-dom";
 import Loading from "../../../../components/shared/loading";
 
 export default function CategoriesPage() {
-  const { categories, loading, getAllCategories, deleteCategory } =
+  const { categories, loading, deleteCategory } =
     useCategoriesManagement();
 
   const [searchQuery, setSearchQuery] = useState("");

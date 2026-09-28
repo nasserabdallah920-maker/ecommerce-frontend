@@ -4,7 +4,6 @@ import EmptyState from "./EmptyState";
 import type { IProduct } from "../../features/products/products.interfaces";
 import { useWishlist } from "../../features/wishlist/hooks/useWishlist";
 import { useHomeData } from "../../hooks/useHomeData";
-import { useEffect } from "react";
 import { addToCart } from "../../features/cart/cart.services";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
@@ -21,7 +20,7 @@ export default function Products({
   id?: string;
 }) {
   const { isInWishlist, toggleWishlist, actionLoading } = useWishlist();
-  const { setPage, page, fetchProducts, products } = useHomeData();
+  const { setPage, page, products } = useHomeData();
   const location = window.location.pathname;
   const pro =
     location == `/category/${id}` ? productsShow?.slice(0, 4) : products;
