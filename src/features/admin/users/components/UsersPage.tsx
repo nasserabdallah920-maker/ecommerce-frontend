@@ -1,7 +1,7 @@
 import { Search, Trash2, Eye, Users, ChevronRight, ChevronLeft, UserCheck, UserX, UserMinus } from "lucide-react";
 import { useUsersManagement } from "../hooks/useUsersManagement";
 import EmptyState from "../../../../components/shared/EmptyState";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Loading from "../../../../components/shared/loading";
 

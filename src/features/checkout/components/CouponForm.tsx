@@ -1,7 +1,7 @@
 import { CheckCircle2, ShieldCheck, Tag } from "lucide-react";
 import { useCoupon } from "../hooks/useCoupon";
 
-import React, { useEffect } from "react";
+import React from "react";
 import { calculateSubtotal } from "../../../utils/cart";
 import { createOrder } from "../checkout.services";
 import { useNavigate } from "react-router-dom";
@@ -17,7 +17,7 @@ export default function CouponForm({
 }: {
   shippingAddress: IShippingAddress;
 }) {
-  const { cart, fetchCart, loading } = useFetchCart();
+  const { cart, loading } = useFetchCart();
 
   const cartItems = cart?.items ?? [];
   const subtotal = calculateSubtotal(cartItems);

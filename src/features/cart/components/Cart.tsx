@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import Loading from "../../../components/shared/loading";
 
 import Actions from "./Actions";
@@ -12,14 +11,12 @@ import FeedbackMessage from "../../../components/shared/FeedbackMessage";
 export default function CartView() {
   const {
     loading,
-    fetchCart,
     handleClearCart,
     cart,
     handleQuantityChange,
     handleRemoveItem,
   } = useFetchCart();
 
-  const userPayload = useSelector((state: RootState) => state.authuser.initialState);
   const isCompleted = useSelector((state: RootState) => state.authuser.isCompleted);
     if(!isCompleted){return(
       <div className="p-6 max-w-6xl mx-auto w-full mt-10">

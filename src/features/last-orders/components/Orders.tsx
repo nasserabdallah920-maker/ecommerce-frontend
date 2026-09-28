@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { ChevronRight, Clock, Package } from "lucide-react";
 import { useOreders } from "../hooks/useOrders";
 import { Link, useNavigate } from "react-router-dom";
@@ -10,7 +9,7 @@ import FeedbackMessage from "../../../components/shared/FeedbackMessage";
 import EmptyState from "../../../components/shared/EmptyState";
 
 export default function OrdersList() {
-  const { getOrders, orders, loading } = useOreders();
+  const { orders, loading } = useOreders();
   const nav = useNavigate();
   const isCompleted = useSelector(
     (state: RootState) => state.authuser.isCompleted
