@@ -34,7 +34,7 @@ export default function AddProductForm() {
     getCategories();
   }, [getCategories]);
   useEffect(() => {
-    if (categories) setCategory(categories[0]._id);
+    if (categories) setCategory(categories[0]?._id);
   }, [categories, setCategory]);
 
   if (loading) return <Loading />;
