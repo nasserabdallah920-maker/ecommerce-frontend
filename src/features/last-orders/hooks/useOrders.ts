@@ -3,7 +3,7 @@ import { getLastOrders } from "../services";
 import type { Order } from "../interfaces";
 import { toast } from "react-toastify";
 
-export const useOreders = () => {
+export const useOreders = (enabled: boolean = true) => {
   const {
     data: ordersResponse,
     isLoading: loading,
@@ -13,6 +13,7 @@ export const useOreders = () => {
   } = useQuery({
     queryKey: ["lastOrders"],
     queryFn: getLastOrders,
+    enabled,
   });
 
   const orders: Order[] | undefined = ordersResponse?.data?.data;

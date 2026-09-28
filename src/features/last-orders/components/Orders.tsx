@@ -9,13 +9,11 @@ import FeedbackMessage from "../../../components/shared/FeedbackMessage";
 import EmptyState from "../../../components/shared/EmptyState";
 
 export default function OrdersList() {
-  const { orders, loading } = useOreders();
-  const nav = useNavigate();
   const isCompleted = useSelector(
     (state: RootState) => state.authuser.isCompleted
   );
-
-  if (loading) return <Loading />;
+  const { orders, loading } = useOreders(isCompleted);
+  const nav = useNavigate();
 
   const orderStatusClasses = {
     pending:
@@ -57,6 +55,8 @@ export default function OrdersList() {
       </div>
     );
   }
+
+  if (loading) return <Loading />;
 
   return (
     <>
