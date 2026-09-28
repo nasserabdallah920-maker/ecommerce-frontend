@@ -17,12 +17,6 @@ import Loading from "../../../../components/shared/loading";
 export default function ProductsManagement() {
   const { getProducts, products, getCategories, categories, searchProducts ,loading} =
     useProductManagement();
-  useEffect(() => {
-    getProducts();
-  }, [getProducts]);
-  useEffect(() => {
-    getCategories();
-  }, [getCategories]);
 
   const itemsStocked = products?.filter((e) => e.stock == 0);
   const [category, setCategory] = useState<string>();

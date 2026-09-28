@@ -28,13 +28,16 @@ export default function AddProductForm() {
     setStock,
     setTitle,
     addProduct,
-    loading
+    loading,
   } = useAddProduct();
   useEffect(() => {
     getCategories();
   }, [getCategories]);
+  useEffect(() => {
+    if (categories) setCategory(categories[0]._id);
+  }, [categories, setCategory]);
 
-  if(loading)return <Loading/>
+  if (loading) return <Loading />;
   return (
     <form
       onSubmit={(e) => {
@@ -64,11 +67,14 @@ export default function AddProductForm() {
             Category (Category)
           </label>
           <div className="relative">
-            <select onChange={(e)=>{setCategory(e.target.value)}} className="w-full pl-4 pr-10 py-2.5 rounded-xl bg-bgMain-light dark:bg-bgMain-dark border border-gray-200 dark:border-gray-800 text-textMain-light dark:text-textMain-dark text-sm appearance-none focus:outline-none focus:border-prime dark:focus:border-prime-darkTheme transition-colors cursor-pointer">
+            <select
+              onChange={(e) => {
+                setCategory(e.target.value);
+              }}
+              className="w-full pl-4 pr-10 py-2.5 rounded-xl bg-bgMain-light dark:bg-bgMain-dark border border-gray-200 dark:border-gray-800 text-textMain-light dark:text-textMain-dark text-sm appearance-none focus:outline-none focus:border-prime dark:focus:border-prime-darkTheme transition-colors cursor-pointer"
+            >
               {categories?.map((cate) => (
-                <option value={cate._id}>
-                  {cate.name}
-                </option>
+                <option value={cate._id}>{cate.name}</option>
               ))}
             </select>
             <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-textMain-light/40 dark:text-textMain-dark/40" />

@@ -16,10 +16,6 @@ export default function OrdersList() {
     (state: RootState) => state.authuser.isCompleted
   );
 
-  useEffect(() => {
-    if (isCompleted) getOrders();
-  }, [getOrders, isCompleted]);
-
   if (loading) return <Loading />;
 
   const orderStatusClasses = {

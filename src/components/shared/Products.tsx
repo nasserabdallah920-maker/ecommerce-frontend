@@ -28,9 +28,6 @@ export default function Products({
   const fn = () => {
     setPage(page + 1);
   };
-  useEffect(() => {
-    fetchProducts();
-  }, [page, fetchProducts]);
 
   const userPayload = useSelector((state: RootState) => state.authuser.initialState);
   

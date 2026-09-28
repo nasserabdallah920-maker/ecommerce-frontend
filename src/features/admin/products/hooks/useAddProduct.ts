@@ -82,6 +82,7 @@ export const useAddProduct = () => {
       formData.append("images", image);
     });
 
+
     addProductMutation.mutate(formData);
   };
 

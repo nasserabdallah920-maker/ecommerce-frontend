@@ -19,10 +19,6 @@ export default function CategoriesPage() {
 
   const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
-    getAllCategories();
-  }, [getAllCategories]);
-
   const filteredCategories = useMemo(() => {
     return categories.filter(
       (cat) =>

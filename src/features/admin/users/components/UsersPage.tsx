@@ -16,11 +16,7 @@ export default function UsersPage() {
   } = useUsersManagement();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const nav= useNavigate()
-
-  useEffect(() => {
-    getAllUsers();
-  }, [getAllUsers]);
+  const nav = useNavigate();
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();

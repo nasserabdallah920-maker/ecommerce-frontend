@@ -17,15 +17,10 @@ export default function CartView() {
     cart,
     handleQuantityChange,
     handleRemoveItem,
-
   } = useFetchCart();
-  const userPayload=useSelector((state:RootState)=>state.authuser.initialState)
-  useEffect(() => {
-    if(userPayload.token)
-    fetchCart();
 
-  }, [fetchCart,userPayload]);
-  const isCompleted= useSelector((state:RootState)=>state.authuser.isCompleted)
+  const userPayload = useSelector((state: RootState) => state.authuser.initialState);
+  const isCompleted = useSelector((state: RootState) => state.authuser.isCompleted);
     if(!isCompleted){return(
       <div className="p-6 max-w-6xl mx-auto w-full mt-10">
         <FeedbackMessage

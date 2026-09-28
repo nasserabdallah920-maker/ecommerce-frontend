@@ -6,6 +6,7 @@ import { useEffect } from "react";
 
 export default function UserHome() {
   const {
+    products,
     categories,
     fetchCategories,
     fetchProducts,
@@ -15,9 +16,9 @@ export default function UserHome() {
   } = useHomeData();
 
   useEffect(() => {
-    fetchCategories();
-    fetchProducts();
-  }, [fetchCategories, fetchProducts, page]);
+    if (!categories || categories.length === 0) fetchCategories();
+    if (!products || products.length === 0) fetchProducts();
+  }, [fetchCategories, fetchProducts, page, categories, products]);
 
   return (
     <div className="min-h-screen bg-bgMain-light dark:bg-bgMain-dark transition-colors duration-300">

@@ -18,9 +18,6 @@ export default function CouponForm({
   shippingAddress: IShippingAddress;
 }) {
   const { cart, fetchCart, loading } = useFetchCart();
-  useEffect(() => {
-    fetchCart();
-  }, [fetchCart]);
 
   const cartItems = cart?.items ?? [];
   const subtotal = calculateSubtotal(cartItems);
